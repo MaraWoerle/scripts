@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ ! -d server ]; then
+if [ ! -f server/server.conf ]; then
   sh generate-server-config.sh
 fi
 
@@ -15,7 +15,7 @@ fi
 
 if [ ! -f client/$client.crt ] && [ ! -f client/$client.key ]; then
   echo "- Generating ${client}.crt:"
-  openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -keyout client/$client.key -nodes -sha256 -days 3650 -subj '/CN=$client' | tee client/$client.crt
+  openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -keyout client/$client.key -nodes -sha256 -days 3650 -subj "/CN=${client}" | tee client/$client.crt
 fi
 
 if [ ! -f client/$client.conf ]; then
@@ -32,7 +32,6 @@ fi
 fingerprint=$(openssl x509 -fingerprint -sha256 -noout -in client/$client.conf | cut -f2 -d "=")
 if ! grep -q $fingerprint server/server.conf; then
   echo "- Adding Fingerprint to server.conf:"
-  serverconf="$(<server/server.conf)"
   echo "$serverconf" | sed "/<peer-fingerprint>/q" | tee server/server.conf
   echo $fingerprint | tee -a server/server.conf
   echo "$serverconf" | sed -r "1,/<peer-fingerprint>/d" | tee -a server/server.conf
